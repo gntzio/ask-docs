@@ -74,5 +74,6 @@ uv run --python .venv/bin/python -m pytest app/tests
 - Add hybrid retrieval and reranking so keyword search and semantic search can work together.
 - Support true full-sync indexing that removes pages no longer seen during a crawl.
 - Improve site scoping for shared-origin docs hosts so separate RTD spaces do not get mixed together.
+- Extend the browser integration beyond Chrome, starting with Edge and Firefox where the extension model allows it.
 - Add better source citations, such as snippet-level references and direct links back to the matching section.
 - Add incremental recrawls and change detection so large docs sites do not need a full refresh every time.
