@@ -47,17 +47,25 @@
     "footer"
   ];
 
-  const PRIMARY_LINK_CONTAINERS = [
-    "nav[aria-label*='side' i]",
-    "nav[aria-label*='navigation' i]",
-    "aside nav",
+  const SIDEBAR_CANDIDATE_SELECTORS = [
+    ".wy-nav-side .wy-menu-vertical",
+    ".wy-nav-side .wy-menu",
+    ".wy-menu-vertical",
     ".wy-menu",
-    ".wy-nav-content-wrap nav",
+    ".bd-sidebar-primary nav",
+    ".bd-sidebar-primary",
+    ".bd-sidebar nav",
     ".bd-sidebar",
+    ".sidebar-tree",
+    ".toc-tree",
+    ".sphinxsidebarwrapper",
     ".sphinxsidebar",
+    ".toctree-wrapper > ul",
     ".toctree-wrapper",
-    ".sidebar",
-    ".toc-tree"
+    "nav[aria-label*='table of contents' i]",
+    "nav[aria-label*='sidebar' i]",
+    "aside nav",
+    "aside"
   ];
 
   const RELATED_LINK_SELECTORS = [
@@ -152,36 +160,61 @@
   }
 
   function collectCrawlLinks(contentRoot) {
-    const primary = collectLinksFromContainers(PRIMARY_LINK_CONTAINERS);
-    const related = collectLinksFromSelectors(RELATED_LINK_SELECTORS);
-    const fallback = collectLinksFromContainer(contentRoot);
+    const sidebarRoot = getSidebarRoot();
+    const sidebar = sidebarRoot ? collectLinksFromContainer(sidebarRoot) : [];
+    const related = sidebar.length === 0 ? collectLinksFromSelectors(RELATED_LINK_SELECTORS) : [];
+    const fallback = sidebar.length === 0 ? collectLinksFromContainer(contentRoot) : [];
 
     return {
-      primary,
+      sidebar,
       related,
       fallback,
     };
   }
 
-  function collectLinksFromContainers(selectors) {
-    const urls = [];
-    const seen = new Set();
+  function getSidebarRoot() {
+    let bestCandidate = null;
+    let bestScore = 0;
 
-    for (const selector of selectors) {
-      const containers = document.querySelectorAll(selector);
-      for (const container of containers) {
-        for (const anchor of container.querySelectorAll("a[href]")) {
-          const normalizedUrl = normalizeLink(anchor.href);
-          if (!normalizedUrl || seen.has(normalizedUrl)) {
-            continue;
-          }
-          seen.add(normalizedUrl);
-          urls.push(normalizedUrl);
+    for (const selector of SIDEBAR_CANDIDATE_SELECTORS) {
+      for (const candidate of document.querySelectorAll(selector)) {
+        const score = scoreSidebarCandidate(candidate);
+        if (score > bestScore) {
+          bestCandidate = candidate;
+          bestScore = score;
         }
       }
     }
 
-    return urls;
+    return bestScore >= 30 ? bestCandidate : null;
+  }
+
+  function scoreSidebarCandidate(candidate) {
+    if (!candidate) {
+      return 0;
+    }
+
+    const anchors = [...candidate.querySelectorAll("a[href]")];
+    if (anchors.length === 0) {
+      return 0;
+    }
+
+    let sameOriginLinks = 0;
+    for (const anchor of anchors) {
+      if (normalizeLink(anchor.href)) {
+        sameOriginLinks += 1;
+      }
+    }
+
+    if (sameOriginLinks === 0) {
+      return 0;
+    }
+
+    const listItems = candidate.querySelectorAll("li").length;
+    const nestedLists = candidate.querySelectorAll("ul, ol").length;
+    const ariaCurrent = candidate.querySelectorAll("[aria-current='page'], .current, .active").length;
+
+    return sameOriginLinks * 10 + listItems * 2 + nestedLists + ariaCurrent * 3;
   }
 
   function collectLinksFromSelectors(selectors) {
@@ -239,6 +272,9 @@
     }
     if (url.hash) {
       url.hash = "";
+    }
+    if (url.search) {
+      url.search = "";
     }
     if (shouldSkipUrl(url)) {
       return null;

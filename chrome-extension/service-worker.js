@@ -201,6 +201,8 @@ async function startSiteCrawl(message, options) {
     queued: new Set(seedEntries.map((entry) => entry.url)),
     known: new Set(seedEntries.map((entry) => entry.url)),
     failedEntries: [],
+    sidebarMode: false,
+    sidebarUrls: new Set(seedEntries.map((entry) => entry.url)),
     followLinks: options.followLinks !== false,
     reindex: Boolean(options.reindex),
     attemptsStarted: 0,
@@ -265,6 +267,7 @@ async function runCrawlJob(crawlJob) {
         crawlJob.pagesIndexed += 1;
         crawlJob.failedEntries = crawlJob.failedEntries.filter((entry) => entry.url !== nextEntry.url);
         relaxSuspiciousBackoff(crawlJob);
+        registerSidebarLinks(crawlJob, pagePayload.links?.sidebar);
 
         if (crawlJob.followLinks && shouldContinueDeeper(crawlJob, nextEntry.depth)) {
           enqueueDiscoveredLinks(crawlJob, pagePayload.links, nextEntry.depth);
@@ -342,8 +345,13 @@ async function stopSiteCrawl(message) {
 
 function enqueueDiscoveredLinks(crawlJob, links, currentDepth) {
   const nextDepth = currentDepth + 1;
+
+  if (crawlJob.sidebarMode) {
+    enqueueLinkGroup(crawlJob, [...crawlJob.sidebarUrls], nextDepth);
+    return;
+  }
+
   let added = 0;
-  added += enqueueLinkGroup(crawlJob, links?.primary, nextDepth);
   added += enqueueLinkGroup(crawlJob, links?.related, nextDepth);
 
   const shouldUseFallback =
@@ -352,6 +360,55 @@ function enqueueDiscoveredLinks(crawlJob, links, currentDepth) {
   if (shouldUseFallback) {
     enqueueLinkGroup(crawlJob, links?.fallback, nextDepth);
   }
+}
+
+function registerSidebarLinks(crawlJob, urls) {
+  if (!Array.isArray(urls) || urls.length === 0) {
+    return 0;
+  }
+
+  const wasSidebarMode = crawlJob.sidebarMode;
+  let added = 0;
+  for (const rawUrl of urls) {
+    const normalizedUrl = normalizeCrawlUrl(rawUrl, crawlJob.siteOrigin);
+    if (!normalizedUrl) {
+      continue;
+    }
+    if (!crawlJob.sidebarUrls.has(normalizedUrl)) {
+      added += 1;
+    }
+    crawlJob.sidebarUrls.add(normalizedUrl);
+  }
+
+  if (crawlJob.sidebarUrls.size > 0) {
+    crawlJob.sidebarMode = true;
+    const normalizedStartUrl = normalizeComparableUrl(crawlJob.startUrl);
+    if (normalizedStartUrl) {
+      crawlJob.sidebarUrls.add(normalizedStartUrl);
+    }
+    if (crawlJob.currentUrl) {
+      const normalizedCurrentUrl = normalizeComparableUrl(crawlJob.currentUrl);
+      if (normalizedCurrentUrl) {
+        crawlJob.sidebarUrls.add(normalizedCurrentUrl);
+      }
+    }
+  }
+
+  if (!wasSidebarMode && crawlJob.sidebarMode) {
+    restrictQueueToSidebar(crawlJob);
+  }
+
+  return added;
+}
+
+function restrictQueueToSidebar(crawlJob) {
+  if (!crawlJob.sidebarMode) {
+    return;
+  }
+
+  crawlJob.queue = crawlJob.queue.filter((entry) => crawlJob.sidebarUrls.has(normalizeComparableUrl(entry.url)));
+  crawlJob.queued = new Set(crawlJob.queue.map((entry) => entry.url));
+  crawlJob.queueLength = crawlJob.queue.length;
 }
 
 function enqueueLinkGroup(crawlJob, urls, depth) {
@@ -801,6 +858,7 @@ function normalizeCrawlUrl(rawUrl, siteOrigin) {
     return null;
   }
   url.hash = "";
+  url.search = "";
   if (shouldSkipUrl(url)) {
     return null;
   }
@@ -814,6 +872,7 @@ function normalizeComparableUrl(rawUrl) {
   }
   const url = new URL(normalizedUrl);
   url.hash = "";
+  url.search = "";
   return url.toString();
 }
 
