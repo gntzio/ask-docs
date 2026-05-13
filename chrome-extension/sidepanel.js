@@ -55,6 +55,7 @@ function bindEvents() {
   elements.stopCrawlButton.addEventListener("click", onStopCrawl);
   elements.crawlPace.addEventListener("change", onChangeCrawlPace);
   elements.retryFailedButton.addEventListener("click", onRetryFailed);
+  elements.questionInput.addEventListener("keydown", onQuestionKeydown);
   elements.askButton.addEventListener("click", onAskQuestion);
   elements.sourcesList.addEventListener("click", onSourceClick);
 }
@@ -239,6 +240,21 @@ async function onAskQuestion() {
     state.questionPending = false;
     renderState();
   }
+}
+
+function onQuestionKeydown(event) {
+  if (event.isComposing) {
+    return;
+  }
+  if (event.key !== "Enter" || !event.ctrlKey) {
+    return;
+  }
+  if (elements.askButton.disabled) {
+    return;
+  }
+
+  event.preventDefault();
+  onAskQuestion();
 }
 
 async function onRetryFailed() {
@@ -479,8 +495,7 @@ function formatCrawlPaceLabel(crawlPace) {
 }
 
 function renderAnswer(answer, sources, chunksUsed) {
-  elements.answerOutput.textContent = answer;
-  elements.answerOutput.classList.remove("muted");
+  renderMarkdownAnswer(answer);
   elements.answerMeta.textContent = `${chunksUsed} chunks used`;
   clearSources();
 
@@ -526,8 +541,7 @@ function renderAnswer(answer, sources, chunksUsed) {
 }
 
 function setAnswerMessage(message, meta) {
-  elements.answerOutput.textContent = message;
-  elements.answerOutput.classList.remove("muted");
+  renderPlainAnswer(message);
   elements.answerMeta.textContent = meta;
 }
 
@@ -539,6 +553,232 @@ function renderTopLevelError(error) {
   const message = error?.message || String(error);
   setAnswerMessage(message, "Error");
   elements.answerOutput.classList.remove("muted");
+}
+
+function renderPlainAnswer(message) {
+  elements.answerOutput.replaceChildren(document.createTextNode(String(message || "")));
+  elements.answerOutput.classList.remove("muted", "markdown-answer");
+}
+
+function renderMarkdownAnswer(markdown) {
+  const fragment = createMarkdownFragment(markdown);
+  elements.answerOutput.replaceChildren();
+  elements.answerOutput.appendChild(fragment);
+  elements.answerOutput.classList.remove("muted");
+  elements.answerOutput.classList.add("markdown-answer");
+}
+
+function createMarkdownFragment(markdown) {
+  const fragment = document.createDocumentFragment();
+  const lines = String(markdown || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n");
+
+  let paragraphLines = [];
+  let listType = null;
+  let listItems = [];
+  let quoteLines = [];
+  let codeBlockLines = null;
+
+  const flushParagraph = () => {
+    if (paragraphLines.length === 0) {
+      return;
+    }
+    const paragraph = document.createElement("p");
+    appendInlineMarkdown(paragraph, paragraphLines.join(" ").trim());
+    fragment.appendChild(paragraph);
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (!listType || listItems.length === 0) {
+      listType = null;
+      listItems = [];
+      return;
+    }
+    const list = document.createElement(listType);
+    for (const itemText of listItems) {
+      const item = document.createElement("li");
+      appendInlineMarkdown(item, itemText);
+      list.appendChild(item);
+    }
+    fragment.appendChild(list);
+    listType = null;
+    listItems = [];
+  };
+
+  const flushQuote = () => {
+    if (quoteLines.length === 0) {
+      return;
+    }
+    const blockquote = document.createElement("blockquote");
+    appendInlineMarkdown(blockquote, quoteLines.join(" ").trim());
+    fragment.appendChild(blockquote);
+    quoteLines = [];
+  };
+
+  const flushCodeBlock = () => {
+    if (!Array.isArray(codeBlockLines)) {
+      return;
+    }
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    code.textContent = codeBlockLines.join("\n");
+    pre.appendChild(code);
+    fragment.appendChild(pre);
+    codeBlockLines = null;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\t/g, "  ");
+
+    if (Array.isArray(codeBlockLines)) {
+      if (/^```/.test(line.trim())) {
+        flushCodeBlock();
+      } else {
+        codeBlockLines.push(rawLine);
+      }
+      continue;
+    }
+
+    if (/^```/.test(line.trim())) {
+      flushParagraph();
+      flushList();
+      flushQuote();
+      codeBlockLines = [];
+      continue;
+    }
+
+    if (line.trim() === "") {
+      flushParagraph();
+      flushList();
+      flushQuote();
+      continue;
+    }
+
+    const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
+    if (headingMatch) {
+      flushParagraph();
+      flushList();
+      flushQuote();
+      const level = Math.min(6, headingMatch[1].length + 3);
+      const heading = document.createElement(`h${level}`);
+      appendInlineMarkdown(heading, headingMatch[2].trim());
+      fragment.appendChild(heading);
+      continue;
+    }
+
+    const quoteMatch = line.match(/^>\s?(.*)$/);
+    if (quoteMatch) {
+      flushParagraph();
+      flushList();
+      quoteLines.push(quoteMatch[1]);
+      continue;
+    }
+
+    if (quoteLines.length > 0) {
+      flushQuote();
+    }
+
+    const unorderedListMatch = line.match(/^\s*[-*+]\s+(.*)$/);
+    if (unorderedListMatch) {
+      flushParagraph();
+      if (listType && listType !== "ul") {
+        flushList();
+      }
+      listType = "ul";
+      listItems.push(unorderedListMatch[1].trim());
+      continue;
+    }
+
+    const orderedListMatch = line.match(/^\s*\d+\.\s+(.*)$/);
+    if (orderedListMatch) {
+      flushParagraph();
+      if (listType && listType !== "ol") {
+        flushList();
+      }
+      listType = "ol";
+      listItems.push(orderedListMatch[1].trim());
+      continue;
+    }
+
+    if (listType) {
+      flushList();
+    }
+
+    paragraphLines.push(line.trim());
+  }
+
+  flushParagraph();
+  flushList();
+  flushQuote();
+  flushCodeBlock();
+
+  if (!fragment.hasChildNodes()) {
+    const fallback = document.createElement("p");
+    fallback.textContent = "";
+    fragment.appendChild(fallback);
+  }
+
+  return fragment;
+}
+
+function appendInlineMarkdown(parent, text) {
+  const pattern =
+    /(\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*\n]+)\*|_([^_\n]+)_)/g;
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const [fullMatch] = match;
+    const matchIndex = match.index ?? 0;
+    if (matchIndex > lastIndex) {
+      parent.appendChild(document.createTextNode(text.slice(lastIndex, matchIndex)));
+    }
+
+    const linkText = match[2];
+    const linkUrl = match[3];
+    const inlineCode = match[4];
+    const strongText = match[5] || match[6];
+    const emphasisText = match[7] || match[8];
+
+    if (linkText && linkUrl && isSafeMarkdownUrl(linkUrl)) {
+      const anchor = document.createElement("a");
+      anchor.href = linkUrl;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer noopener";
+      anchor.textContent = linkText;
+      parent.appendChild(anchor);
+    } else if (inlineCode) {
+      const code = document.createElement("code");
+      code.textContent = inlineCode;
+      parent.appendChild(code);
+    } else if (strongText) {
+      const strong = document.createElement("strong");
+      strong.textContent = strongText;
+      parent.appendChild(strong);
+    } else if (emphasisText) {
+      const emphasis = document.createElement("em");
+      emphasis.textContent = emphasisText;
+      parent.appendChild(emphasis);
+    } else {
+      parent.appendChild(document.createTextNode(fullMatch));
+    }
+
+    lastIndex = matchIndex + fullMatch.length;
+  }
+
+  if (lastIndex < text.length) {
+    parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+}
+
+function isSafeMarkdownUrl(rawUrl) {
+  try {
+    const parsedUrl = new URL(rawUrl);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch (_error) {
+    return false;
+  }
 }
 
 function setBadge(element, text, tone) {

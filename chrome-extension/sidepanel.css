@@ -351,6 +351,89 @@ progress::-moz-progress-bar {
   overflow-wrap: anywhere;
 }
 
+.answer-output.markdown-answer {
+  white-space: normal;
+  line-height: 1.55;
+}
+
+.answer-output.markdown-answer > :first-child {
+  margin-top: 0;
+}
+
+.answer-output.markdown-answer > :last-child {
+  margin-bottom: 0;
+}
+
+.answer-output.markdown-answer p,
+.answer-output.markdown-answer ul,
+.answer-output.markdown-answer ol,
+.answer-output.markdown-answer blockquote,
+.answer-output.markdown-answer pre,
+.answer-output.markdown-answer h4,
+.answer-output.markdown-answer h5,
+.answer-output.markdown-answer h6 {
+  margin: 0 0 12px;
+}
+
+.answer-output.markdown-answer ul,
+.answer-output.markdown-answer ol {
+  padding-left: 20px;
+}
+
+.answer-output.markdown-answer li + li {
+  margin-top: 6px;
+}
+
+.answer-output.markdown-answer a {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.answer-output.markdown-answer code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(31, 41, 51, 0.08);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.94em;
+}
+
+.answer-output.markdown-answer pre {
+  overflow-x: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(31, 41, 51, 0.06);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+}
+
+.answer-output.markdown-answer pre code {
+  display: block;
+  padding: 0;
+  background: transparent;
+  white-space: pre-wrap;
+}
+
+.answer-output.markdown-answer blockquote {
+  padding-left: 12px;
+  border-left: 3px solid rgba(180, 83, 9, 0.35);
+  color: var(--muted);
+}
+
+.answer-output.markdown-answer h4,
+.answer-output.markdown-answer h5,
+.answer-output.markdown-answer h6 {
+  line-height: 1.3;
+}
+
+.answer-output.markdown-answer h4 {
+  font-size: 16px;
+}
+
+.answer-output.markdown-answer h5,
+.answer-output.markdown-answer h6 {
+  font-size: 14px;
+}
+
 .muted {
   color: var(--muted);
 }
