@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AskDocs</title>
+    <link rel="stylesheet" href="sidepanel.css">
+  </head>
+  <body>
+    <main class="panel-shell">
+      <header class="hero">
+        <p class="eyebrow">AskDocs</p>
+        <h1>Local docs assistant</h1>
+        <p class="hero-copy">
+          Crawl the docs site you already have open, index it into the local backend,
+          and ask grounded questions with sources.
+        </p>
+      </header>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Backend</h2>
+            <p>Use the local AskDocs API endpoint.</p>
+          </div>
+          <span id="backend-health-badge" class="badge badge-muted">Checking</span>
+        </div>
+        <label class="field-label" for="backend-url">Backend URL</label>
+        <div class="inline-row">
+          <input id="backend-url" type="url" spellcheck="false" placeholder="http://127.0.0.1:8000">
+          <button id="save-backend-button" type="button" class="button button-secondary">Save</button>
+        </div>
+        <p id="backend-status" class="helper-text">Waiting for backend status.</p>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Current site</h2>
+            <p>AskDocs only crawls the active origin.</p>
+          </div>
+          <span id="site-access-badge" class="badge badge-muted">Unknown</span>
+        </div>
+
+        <dl class="meta-grid">
+          <div>
+            <dt>Origin</dt>
+            <dd id="site-origin">Open a docs page</dd>
+          </div>
+          <div>
+            <dt>Current page</dt>
+            <dd id="current-page">No active docs page</dd>
+          </div>
+          <div>
+            <dt>Last index</dt>
+            <dd id="last-indexed">Not indexed yet</dd>
+          </div>
+          <div>
+            <dt>Indexed pages</dt>
+            <dd id="indexed-pages">0</dd>
+          </div>
+        </dl>
+
+        <div class="button-row">
+          <button id="grant-access-button" type="button" class="button button-secondary">
+            Grant access
+          </button>
+          <button id="index-site-button" type="button" class="button button-primary">
+            Index site
+          </button>
+          <button id="reindex-site-button" type="button" class="button button-secondary">
+            Re-index
+          </button>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-header">
+            <span id="crawl-status">Idle</span>
+            <span id="crawl-counts">0 / 100 pages</span>
+          </div>
+          <progress id="crawl-progress" max="100" value="0"></progress>
+          <p id="crawl-detail" class="helper-text">No crawl in progress.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Ask</h2>
+            <p>Questions are answered by the backend using indexed snippets only.</p>
+          </div>
+        </div>
+
+        <label class="field-label" for="question-input">Question</label>
+        <textarea
+          id="question-input"
+          rows="5"
+          placeholder="How do I run it locally with Docker?"
+        ></textarea>
+
+        <div class="button-row">
+          <button id="ask-button" type="button" class="button button-primary">Ask</button>
+        </div>
+
+        <div class="answer-block">
+          <div class="answer-header">
+            <h3>Answer</h3>
+            <span id="answer-meta" class="helper-text">No answer yet.</span>
+          </div>
+          <div id="answer-output" class="answer-output muted">
+            Ask a question after indexing at least one page on this site.
+          </div>
+        </div>
+
+        <div class="sources-block">
+          <div class="answer-header">
+            <h3>Sources</h3>
+          </div>
+          <ul id="sources-list" class="sources-list"></ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

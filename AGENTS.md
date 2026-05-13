@@ -48,9 +48,8 @@ AskDocs has three parts:
 This repository contains:
 - local Ollama development and Docker setup
 - AskDocs backend service
+- Chrome MV3 extension for crawling and QA
 - supporting scripts and local data directory
-
-The Chrome extension may live here or be added later, but any new code should preserve the architecture above.
 
 ## Decision rule for agents
 
