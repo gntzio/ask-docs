@@ -2,53 +2,59 @@
 
 ## Mission
 
-AskDocs is a local-first documentation assistant for public and private Read the Docs sites. Users should be able to crawl docs pages from their own browser session, index that content locally, and ask grounded questions answered by a local Ollama model.
+AskDocs is a local-first documentation assistant for public and private docs sites. It should let users crawl docs through their own browser session, index content locally, and ask grounded questions answered by a local Ollama model.
 
-## Current repo state
+## System overview
 
-Today this repository only contains the local Ollama development stack:
+AskDocs has three parts:
 
-- `start-local.sh` starts Ollama, optionally enables NVIDIA GPU mode, and can also start Open WebUI.
-- `stop-local.sh` stops the local stack.
-- `gpu-info.sh` helps diagnose local NVIDIA issues.
-- `ollama/compose.yaml` defines the base local services.
-- `ollama/compose.gpu.yaml` enables Docker GPU access for Ollama.
+1. **Chrome extension**
+   - Crawls docs pages using the user’s existing browser session
+   - Extracts page content and metadata
+   - Sends crawled content to the backend
+   - Provides the side panel UI for crawl status, search, and answers
 
-The backend service and Chrome extension are planned but not yet scaffolded here.
+2. **AskDocs backend**
+   - Accepts crawled pages from the extension
+   - Cleans, chunks, stores, and indexes content locally
+   - Retrieves relevant chunks for each user query
+   - Calls the local Ollama API with grounded context
+   - Returns answers with supporting sources
 
-## Planned architecture
+3. **Local Ollama service**
+   - Runs fully on the user’s machine
+   - Serves local answer generation
+   - Remains the default inference path
 
-### 1. Chrome extension
+## Core principles
 
-- Crawl docs pages using the user's existing browser session.
-- Extract page content and metadata.
-- Send crawled content to the backend for ingestion.
-- Provide a side panel UI for crawl status, asking questions, and showing answers with sources.
-
-### 2. AskDocs backend
-
-- Accept crawled pages from the extension.
-- Clean, chunk, and index content for retrieval.
-- Retrieve relevant chunks for each user query.
-- Build grounded prompts and call the local Ollama API.
-- Return answers plus supporting sources to the extension.
-
-### 3. Local Ollama service
-
-- Run fully on the user's machine.
-- Serve local generation through `http://127.0.0.1:11434`.
-- Remain the default answer-generation path for local and private documentation.
+- **Local first**: keep content, indexing, retrieval, and inference local by default
+- **Privacy first**: do not introduce hosted LLM dependencies as the default path
+- **Grounded answers**: answers should come from retrieved documentation snippets, not free-form guessing
+- **Clear boundaries**: keep crawling, storage, retrieval, and generation separated
+- **Simple developer experience**: favor explicit configuration and easy local startup
 
 ## Engineering guidance
 
-- Prefer simple, explicit interfaces between components, especially JSON HTTP APIs between the extension and backend.
-- Preserve the local-first model. Do not introduce hosted LLM dependencies as the default path.
-- Keep configuration explicit and safe. Use `.env.example` for documented settings and never commit secrets.
-- Favor small, separable modules so crawling, indexing, retrieval, and answer generation can evolve independently.
-- When adding new top-level components, include a short README in that directory.
-- Keep startup scripts friendly for local development on Linux first; broader platform support is welcome if it does not complicate the default path.
+- Prefer simple JSON HTTP APIs between components
+- Keep modules small and separable
+- Favor predictable, debuggable behavior over clever abstractions
+- When adding new top-level components, include a short README
+- Use documented local configuration and never commit secrets
+- Keep Linux local development as the default happy path
 
+## Current repository scope
 
-## Working assumption for agents
+This repository contains:
+- local Ollama development and Docker setup
+- AskDocs backend service
+- supporting scripts and local data directory
 
-If a design decision is unclear, choose the option that best preserves local privacy, grounded answers, and a simple local developer experience. Do not hesitate to ask follow up questions.
+The Chrome extension may live here or be added later, but any new code should preserve the architecture above.
+
+## Decision rule for agents
+
+If a design decision is unclear, choose the option that best preserves:
+1. local privacy,
+2. grounded retrieval-based answers,
+3. a simple local developer workflow.

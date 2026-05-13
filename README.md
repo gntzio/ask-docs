@@ -56,9 +56,3 @@ bash ./stop-local.sh
 The SQLite database is stored on the host at `./data/askdocs.db`.
 
 If you run only the backend container outside `start-local.sh`, set `OLLAMA_BASE_URL` as needed. The standalone `docker-compose.yml` defaults to `http://host.docker.internal:11434`.
-
-## Notes
-
-- The backend does not crawl websites itself. Crawling is expected to happen in the Chrome extension.
-- `POST /ask` searches local chunks first, then calls Ollama's chat API with `stream: false`.
-- `POST /reindex-site` clears all indexed pages and chunks for one site.
