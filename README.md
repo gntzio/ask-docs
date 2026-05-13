@@ -1,5 +1,7 @@
 # AskDocs 📙
 
+[![Backend Tests](https://github.com/gntzio/ask-docs/actions/workflows/backend-tests.yml/badge.svg?branch=main)](https://github.com/gntzio/ask-docs/actions/workflows/backend-tests.yml)
+
 AskDocs lets you chat with public and private RTD sites.
 
 AskDocs is a local-first docs assistant with three parts:
