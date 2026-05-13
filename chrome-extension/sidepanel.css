@@ -1,21 +1,138 @@
 :root {
   color-scheme: light;
-  --bg: #f4efe4;
   --bg-accent: #fffaf0;
+  --bg-start: #fbf7ef;
+  --bg-end: #f2eadb;
+  --glow: rgba(180, 83, 9, 0.14);
   --card: rgba(255, 250, 240, 0.92);
   --card-strong: #fffdf8;
+  --surface: rgba(255, 255, 255, 0.56);
+  --surface-muted: rgba(255, 255, 255, 0.52);
+  --surface-strong: rgba(255, 255, 255, 0.85);
   --ink: #1f2933;
   --muted: #5f6c7b;
   --line: rgba(31, 41, 51, 0.12);
+  --line-soft: rgba(31, 41, 51, 0.08);
   --brand: #b45309;
   --brand-strong: #92400e;
   --success: #0f766e;
   --warning: #b45309;
   --danger: #b91c1c;
+  --focus-ring: rgba(180, 83, 9, 0.25);
+  --focus-line: rgba(180, 83, 9, 0.5);
+  --input-line: rgba(31, 41, 51, 0.18);
+  --input-bg: rgba(255, 255, 255, 0.85);
+  --button-secondary-bg: rgba(31, 41, 51, 0.08);
+  --badge-muted-bg: rgba(95, 108, 123, 0.14);
+  --badge-success-bg: rgba(15, 118, 110, 0.14);
+  --badge-warning-bg: rgba(180, 83, 9, 0.14);
+  --badge-danger-bg: rgba(185, 28, 28, 0.14);
+  --hero-start: rgba(146, 64, 14, 0.98);
+  --hero-end: rgba(180, 83, 9, 0.9);
+  --hero-ink: #fff8ef;
+  --hero-copy: rgba(255, 248, 239, 0.9);
+  --hero-field-bg: rgba(255, 248, 239, 0.12);
+  --hero-field-border: rgba(255, 248, 239, 0.18);
+  --hero-field-label: rgba(255, 248, 239, 0.82);
+  --hero-field-ink: #fff8ef;
+  --progress-track: rgba(31, 41, 51, 0.08);
+  --code-bg: rgba(31, 41, 51, 0.08);
+  --code-block-bg: rgba(31, 41, 51, 0.06);
+  --quote-line: rgba(180, 83, 9, 0.35);
   --shadow: 0 18px 40px rgba(31, 41, 51, 0.09);
   --radius: 18px;
   --radius-sm: 12px;
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-accent: #1a212c;
+  --bg-start: #181d25;
+  --bg-end: #0e1117;
+  --glow: rgba(245, 158, 11, 0.18);
+  --card: rgba(20, 26, 35, 0.94);
+  --card-strong: #17202a;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-muted: rgba(255, 255, 255, 0.03);
+  --surface-strong: rgba(15, 23, 42, 0.72);
+  --ink: #edf2f7;
+  --muted: #a4afbc;
+  --line: rgba(226, 232, 240, 0.12);
+  --line-soft: rgba(226, 232, 240, 0.08);
+  --brand: #f59e0b;
+  --brand-strong: #d97706;
+  --success: #2dd4bf;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --focus-ring: rgba(245, 158, 11, 0.28);
+  --focus-line: rgba(245, 158, 11, 0.56);
+  --input-line: rgba(226, 232, 240, 0.14);
+  --input-bg: rgba(15, 23, 42, 0.72);
+  --button-secondary-bg: rgba(255, 255, 255, 0.06);
+  --badge-muted-bg: rgba(164, 175, 188, 0.14);
+  --badge-success-bg: rgba(45, 212, 191, 0.16);
+  --badge-warning-bg: rgba(251, 191, 36, 0.18);
+  --badge-danger-bg: rgba(248, 113, 113, 0.16);
+  --hero-start: rgba(120, 53, 15, 0.98);
+  --hero-end: rgba(180, 83, 9, 0.9);
+  --hero-ink: #fff7ed;
+  --hero-copy: rgba(255, 247, 237, 0.9);
+  --hero-field-bg: rgba(255, 247, 237, 0.1);
+  --hero-field-border: rgba(255, 247, 237, 0.16);
+  --hero-field-label: rgba(255, 247, 237, 0.82);
+  --hero-field-ink: #fff7ed;
+  --progress-track: rgba(255, 255, 255, 0.08);
+  --code-bg: rgba(255, 255, 255, 0.08);
+  --code-block-bg: rgba(15, 23, 42, 0.72);
+  --quote-line: rgba(245, 158, 11, 0.42);
+  --shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg-accent: #1a212c;
+    --bg-start: #181d25;
+    --bg-end: #0e1117;
+    --glow: rgba(245, 158, 11, 0.18);
+    --card: rgba(20, 26, 35, 0.94);
+    --card-strong: #17202a;
+    --surface: rgba(255, 255, 255, 0.04);
+    --surface-muted: rgba(255, 255, 255, 0.03);
+    --surface-strong: rgba(15, 23, 42, 0.72);
+    --ink: #edf2f7;
+    --muted: #a4afbc;
+    --line: rgba(226, 232, 240, 0.12);
+    --line-soft: rgba(226, 232, 240, 0.08);
+    --brand: #f59e0b;
+    --brand-strong: #d97706;
+    --success: #2dd4bf;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --focus-ring: rgba(245, 158, 11, 0.28);
+    --focus-line: rgba(245, 158, 11, 0.56);
+    --input-line: rgba(226, 232, 240, 0.14);
+    --input-bg: rgba(15, 23, 42, 0.72);
+    --button-secondary-bg: rgba(255, 255, 255, 0.06);
+    --badge-muted-bg: rgba(164, 175, 188, 0.14);
+    --badge-success-bg: rgba(45, 212, 191, 0.16);
+    --badge-warning-bg: rgba(251, 191, 36, 0.18);
+    --badge-danger-bg: rgba(248, 113, 113, 0.16);
+    --hero-start: rgba(120, 53, 15, 0.98);
+    --hero-end: rgba(180, 83, 9, 0.9);
+    --hero-ink: #fff7ed;
+    --hero-copy: rgba(255, 247, 237, 0.9);
+    --hero-field-bg: rgba(255, 247, 237, 0.1);
+    --hero-field-border: rgba(255, 247, 237, 0.16);
+    --hero-field-label: rgba(255, 247, 237, 0.82);
+    --hero-field-ink: #fff7ed;
+    --progress-track: rgba(255, 255, 255, 0.08);
+    --code-bg: rgba(255, 255, 255, 0.08);
+    --code-block-bg: rgba(15, 23, 42, 0.72);
+    --quote-line: rgba(245, 158, 11, 0.42);
+    --shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+  }
 }
 
 * {
@@ -27,8 +144,8 @@ body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at top right, rgba(180, 83, 9, 0.14), transparent 32%),
-    linear-gradient(180deg, #fbf7ef 0%, #f2eadb 100%);
+    radial-gradient(circle at top right, var(--glow), transparent 32%),
+    linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
   color: var(--ink);
 }
 
@@ -47,9 +164,9 @@ body {
   padding: 20px;
   border-radius: calc(var(--radius) + 2px);
   background:
-    linear-gradient(135deg, rgba(146, 64, 14, 0.98), rgba(180, 83, 9, 0.9)),
+    linear-gradient(135deg, var(--hero-start), var(--hero-end)),
     var(--card-strong);
-  color: #fff8ef;
+  color: var(--hero-ink);
   box-shadow: var(--shadow);
 }
 
@@ -69,7 +186,37 @@ body {
 
 .hero-copy {
   margin: 12px 0 0;
-  color: rgba(255, 248, 239, 0.9);
+  color: var(--hero-copy);
+}
+
+.hero-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.theme-field {
+  display: grid;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.theme-field span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hero-field-label);
+}
+
+.theme-select {
+  border: 1px solid var(--hero-field-border);
+  background: var(--hero-field-bg);
+  color: var(--hero-field-ink);
+}
+
+.theme-select:focus {
+  outline: 2px solid rgba(255, 248, 239, 0.22);
+  border-color: rgba(255, 248, 239, 0.34);
 }
 
 .card {
@@ -98,7 +245,7 @@ body {
 }
 
 .collapsible-summary:focus-visible {
-  outline: 2px solid rgba(180, 83, 9, 0.25);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
@@ -107,7 +254,7 @@ body {
 }
 
 .collapsible-card[open] .collapsible-body {
-  border-top: 1px solid rgba(31, 41, 51, 0.08);
+  border-top: 1px solid var(--line-soft);
 }
 
 .summary-trailing {
@@ -194,9 +341,9 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid rgba(31, 41, 51, 0.18);
+  border: 1px solid var(--input-line);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--input-bg);
   color: var(--ink);
   padding: 12px 14px;
   font: inherit;
@@ -205,8 +352,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid rgba(180, 83, 9, 0.25);
-  border-color: rgba(180, 83, 9, 0.5);
+  outline: 2px solid var(--focus-ring);
+  border-color: var(--focus-line);
 }
 
 textarea {
@@ -239,7 +386,7 @@ textarea {
 }
 
 .button-secondary {
-  background: rgba(31, 41, 51, 0.08);
+  background: var(--button-secondary-bg);
   color: var(--ink);
 }
 
@@ -255,22 +402,22 @@ textarea {
 }
 
 .badge-muted {
-  background: rgba(95, 108, 123, 0.14);
+  background: var(--badge-muted-bg);
   color: var(--muted);
 }
 
 .badge-success {
-  background: rgba(15, 118, 110, 0.14);
+  background: var(--badge-success-bg);
   color: var(--success);
 }
 
 .badge-warning {
-  background: rgba(180, 83, 9, 0.14);
+  background: var(--badge-warning-bg);
   color: var(--warning);
 }
 
 .badge-danger {
-  background: rgba(185, 28, 28, 0.14);
+  background: var(--badge-danger-bg);
   color: var(--danger);
 }
 
@@ -284,8 +431,8 @@ textarea {
 .meta-grid div {
   padding: 12px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.52);
-  border: 1px solid rgba(31, 41, 51, 0.08);
+  background: var(--surface-muted);
+  border: 1px solid var(--line-soft);
 }
 
 .meta-grid dt {
@@ -304,8 +451,8 @@ textarea {
   margin-top: 16px;
   padding: 14px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.56);
-  border: 1px solid rgba(31, 41, 51, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
 }
 
 .retry-row {
@@ -313,7 +460,7 @@ textarea {
   gap: 10px;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid rgba(31, 41, 51, 0.08);
+  border-top: 1px solid var(--line-soft);
 }
 
 .is-hidden {
@@ -327,11 +474,11 @@ progress {
   overflow: hidden;
   border: 0;
   border-radius: 999px;
-  background: rgba(31, 41, 51, 0.08);
+  background: var(--progress-track);
 }
 
 progress::-webkit-progress-bar {
-  background: rgba(31, 41, 51, 0.08);
+  background: var(--progress-track);
   border-radius: 999px;
 }
 
@@ -393,7 +540,7 @@ progress::-moz-progress-bar {
 .answer-output.markdown-answer code {
   padding: 1px 5px;
   border-radius: 6px;
-  background: rgba(31, 41, 51, 0.08);
+  background: var(--code-bg);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.94em;
 }
@@ -402,8 +549,8 @@ progress::-moz-progress-bar {
   overflow-x: auto;
   padding: 12px;
   border-radius: 12px;
-  background: rgba(31, 41, 51, 0.06);
-  border: 1px solid rgba(31, 41, 51, 0.08);
+  background: var(--code-block-bg);
+  border: 1px solid var(--line-soft);
 }
 
 .answer-output.markdown-answer pre code {
@@ -415,7 +562,7 @@ progress::-moz-progress-bar {
 
 .answer-output.markdown-answer blockquote {
   padding-left: 12px;
-  border-left: 3px solid rgba(180, 83, 9, 0.35);
+  border-left: 3px solid var(--quote-line);
   color: var(--muted);
 }
 
@@ -452,7 +599,7 @@ progress::-moz-progress-bar {
   padding: 12px;
   border-radius: var(--radius-sm);
   background: var(--bg-accent);
-  border: 1px solid rgba(31, 41, 51, 0.08);
+  border: 1px solid var(--line-soft);
 }
 
 .source-title {
@@ -484,5 +631,13 @@ progress::-moz-progress-bar {
 
   .settings-row {
     grid-template-columns: 1fr;
+  }
+
+  .hero-tools {
+    justify-content: flex-start;
+  }
+
+  .theme-field {
+    width: 100%;
   }
 }

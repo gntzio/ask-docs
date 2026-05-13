@@ -5,8 +5,10 @@ const state = {
 
 const POLL_INTERVAL_MS = 1500;
 const PANEL_STATE_STORAGE_KEY = "askdocs:panel-state";
+const THEME_STORAGE_KEY = "askdocs:theme";
 
 const elements = {
+  themeSelect: document.querySelector("#theme-select"),
   backendPanel: document.querySelector("#backend-panel"),
   backendUrl: document.querySelector("#backend-url"),
   saveBackendButton: document.querySelector("#save-backend-button"),
@@ -38,6 +40,7 @@ const elements = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  restoreThemePreference();
   restorePanelState();
   bindEvents();
   refreshState({ forceHealthCheck: true }).catch(renderTopLevelError);
@@ -48,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function bindEvents() {
   bindPanelToggles();
+  elements.themeSelect.addEventListener("change", onChangeTheme);
   elements.saveBackendButton.addEventListener("click", onSaveBackendUrl);
   elements.grantAccessButton.addEventListener("click", onGrantAccess);
   elements.indexSiteButton.addEventListener("click", () => onStartCrawl({ reindex: false }));
@@ -63,6 +67,40 @@ function bindEvents() {
 function bindPanelToggles() {
   elements.backendPanel.addEventListener("toggle", persistPanelState);
   elements.currentSitePanel.addEventListener("toggle", persistPanelState);
+}
+
+function restoreThemePreference() {
+  let theme = "auto";
+  try {
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "auto") {
+      theme = savedTheme;
+    }
+  } catch (_error) {
+    // Ignore storage issues and fall back to automatic theme detection.
+  }
+
+  elements.themeSelect.value = theme;
+  applyTheme(theme);
+}
+
+function onChangeTheme() {
+  const theme = elements.themeSelect.value;
+  applyTheme(theme);
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (_error) {
+    // Ignore storage issues. The in-memory theme still applies for this session.
+  }
+}
+
+function applyTheme(theme) {
+  if (theme === "light" || theme === "dark") {
+    document.documentElement.dataset.theme = theme;
+    return;
+  }
+
+  document.documentElement.removeAttribute("data-theme");
 }
 
 async function refreshState(options = {}) {
