@@ -20,6 +20,8 @@ Thumbs.db
 .tmp/
 tmp/
 coverage/
+data/*
+!data/.gitkeep
 
 # Python backend artifacts
 __pycache__/

@@ -1,0 +1,12 @@
+.agents
+.codex
+.git
+.gitignore
+.venv
+__pycache__/
+*.py[cod]
+data/
+node_modules/
+dist/
+build/
+

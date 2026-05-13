@@ -2,15 +2,17 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 BASE_COMPOSE_FILE="$ROOT_DIR/ollama/compose.yaml"
 GPU_COMPOSE_FILE="$ROOT_DIR/ollama/compose.gpu.yaml"
 OLLAMA_CONTAINER_NAME="${OLLAMA_CONTAINER_NAME:-rtd-ollama}"
 OPEN_WEBUI_CONTAINER_NAME="${OPEN_WEBUI_CONTAINER_NAME:-rtd-open-webui}"
+ASKDOCS_BACKEND_URL="${ASKDOCS_BACKEND_URL:-http://127.0.0.1:8000}"
 MODEL="${OLLAMA_MODEL:-llama3.2:3b}"
 OPEN_WEBUI_ENABLED="${OPEN_WEBUI_ENABLED:-1}"
 ACCELERATION_MODE="cpu"
-COMPOSE_ARGS=(-f "$BASE_COMPOSE_FILE")
-SERVICES=(ollama)
+COMPOSE_ARGS=(-f "$BACKEND_COMPOSE_FILE" -f "$BASE_COMPOSE_FILE")
+SERVICES=(ollama askdocs-backend)
 
 require_command() {
   local command_name="$1"
@@ -77,8 +79,8 @@ start_stack() {
     echo "Docker could not attach an NVIDIA GPU to the Ollama container. Falling back to CPU mode." >&2
     echo "This usually means the NVIDIA Container Toolkit is not installed or Docker is not configured for GPU workloads yet." >&2
     ACCELERATION_MODE="cpu"
-    COMPOSE_ARGS=(-f "$BASE_COMPOSE_FILE")
-    docker compose -f "$BASE_COMPOSE_FILE" down >/dev/null 2>&1 || true
+    docker compose "${COMPOSE_ARGS[@]}" down >/dev/null 2>&1 || true
+    COMPOSE_ARGS=(-f "$BACKEND_COMPOSE_FILE" -f "$BASE_COMPOSE_FILE")
     echo "Retrying local stack startup in CPU mode..."
     docker compose "${COMPOSE_ARGS[@]}" up -d "${SERVICES[@]}"
     return 0
@@ -89,6 +91,7 @@ start_stack() {
 }
 
 require_command docker
+export OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://ollama:11434}"
 
 if [[ "${OLLAMA_FORCE_CPU:-0}" == "1" ]]; then
   echo "CPU fallback forced via OLLAMA_FORCE_CPU=1."
@@ -131,6 +134,11 @@ if ! wait_for_ollama; then
   exit 1
 fi
 
+if ! wait_for_http_url "$ASKDOCS_BACKEND_URL/health" "AskDocs backend health endpoint" 90; then
+  docker compose "${COMPOSE_ARGS[@]}" logs --tail=100 askdocs-backend || true
+  exit 1
+fi
+
 echo "Pulling model: $MODEL"
 docker exec "$OLLAMA_CONTAINER_NAME" ollama pull "$MODEL"
 
@@ -142,7 +150,9 @@ if [[ "$OPEN_WEBUI_ENABLED" == "1" ]]; then
 fi
 
 echo
-echo "Local LLM stack is ready."
+echo "Local AskDocs stack is ready."
+echo "Backend API:  $ASKDOCS_BACKEND_URL"
+echo "Database:     $ROOT_DIR/data/askdocs.db"
 echo "Ollama API:   http://127.0.0.1:11434/api"
 echo "Model:        $MODEL"
 echo "Mode:         $ACCELERATION_MODE"
