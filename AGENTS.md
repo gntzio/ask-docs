@@ -1,59 +1,32 @@
-# AGENTS.md
+# AskDocs Agents
 
 ## Mission
 
-AskDocs is a local-first documentation assistant for public and private docs sites. It should let users crawl docs through their own browser session, index content locally, and ask grounded questions answered by a local Ollama model.
+Help build AskDocs as a local-first docs assistant for public and private RTD-style sites.
 
-## System overview
+## System
 
-AskDocs has three parts:
+- `chrome-extension/`: side panel UI, site access flow, crawling, backend integration
+- `app/`: backend ingestion, chunking, search, and grounded QA orchestration
+- `ollama/`: local inference service
 
-1. **Chrome extension**
-   - Crawls docs pages using the user’s existing browser session
-   - Extracts page content and metadata
-   - Sends crawled content to the backend
-   - Provides the side panel UI for crawl status, search, and answers
+## Guardrails
 
-2. **AskDocs backend**
-   - Accepts crawled pages from the extension
-   - Cleans, chunks, stores, and indexes content locally
-   - Retrieves relevant chunks for each user query
-   - Calls the local Ollama API with grounded context
-   - Returns answers with supporting sources
+- Keep crawling in the Chrome extension, not in the backend.
+- Keep indexing and inference local by default.
+- Keep answers grounded in retrieved documentation snippets and return sources.
+- Do not make the extension call Ollama directly.
+- Prefer predictable, debuggable behavior over clever abstractions.
 
-3. **Local Ollama service**
-   - Runs fully on the user’s machine
-   - Serves local answer generation
-   - Remains the default inference path
+## Crawl expectations
 
-## Core principles
+- Use the user’s existing browser session.
+- Stay same-origin unless the product is explicitly redesigned.
+- Prefer docs sidebar navigation when it exists instead of broad body-link crawling.
+- Avoid widening crawl scope just because multiple docs sets share one host.
 
-- **Local first**: keep content, indexing, retrieval, and inference local by default
-- **Privacy first**: do not introduce hosted LLM dependencies as the default path
-- **Grounded answers**: answers should come from retrieved documentation snippets, not free-form guessing
-- **Clear boundaries**: keep crawling, storage, retrieval, and generation separated
-- **Simple developer experience**: favor explicit configuration and easy local startup
+## Repo expectations
 
-## Engineering guidance
-
-- Prefer simple JSON HTTP APIs between components
-- Keep modules small and separable
-- Favor predictable, debuggable behavior over clever abstractions
-- When adding new top-level components, include a short README
-- Use documented local configuration and never commit secrets
-- Keep Linux local development as the default happy path
-
-## Current repository scope
-
-This repository contains:
-- local Ollama development and Docker setup
-- AskDocs backend service
-- Chrome MV3 extension for crawling and QA
-- supporting scripts and local data directory
-
-## Decision rule for agents
-
-If a design decision is unclear, choose the option that best preserves:
-1. local privacy,
-2. grounded retrieval-based answers,
-3. a simple local developer workflow.
+- Keep setup simple on Linux and in Docker.
+- Document behavior changes briefly in `README.md` when they affect local workflow.
+- Do not commit secrets or machine-specific credentials.
