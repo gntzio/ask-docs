@@ -56,9 +56,9 @@ Open a docs page, open the AskDocs side panel, grant access if needed, index the
 Run backend unit tests with:
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest app/tests
+uv venv
+uv pip install --python .venv/bin/python -r requirements-dev.txt
+uv run --python .venv/bin/python -m pytest app/tests
 ```
 
 ## Notes
