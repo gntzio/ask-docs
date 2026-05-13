@@ -49,8 +49,6 @@ class ChunkDraft:
 
 
 def chunk_page(*, title: str | None, headings: list[str], body: str) -> list[dict[str, str | None]]:
-    del title  # Title is stored with each chunk but does not affect splitting today.
-
     normalized_body = _normalize_text(body)
     if not normalized_body:
         return []
@@ -64,6 +62,7 @@ def chunk_page(*, title: str | None, headings: list[str], body: str) -> list[dic
         for chunk_text in _chunk_text(section_text):
             chunks.append(
                 {
+                    "title": title,
                     "heading": heading,
                     "body": chunk_text,
                 }

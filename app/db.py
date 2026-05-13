@@ -117,7 +117,14 @@ def upsert_page_with_chunks(
         conn.execute("DELETE FROM chunks WHERE page_id = ?", (page_id,))
 
         rows = [
-            (page_id, site, url, title, chunk["heading"], chunk["body"])
+            (
+                page_id,
+                site,
+                url,
+                chunk.get("title", title),
+                chunk["heading"],
+                chunk["body"],
+            )
             for chunk in chunks
         ]
         if rows:
@@ -135,4 +142,3 @@ def upsert_page_with_chunks(
 def delete_site(site: str) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM pages WHERE site = ?", (site,))
-

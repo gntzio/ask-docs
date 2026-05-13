@@ -51,6 +51,14 @@ Then load the extension:
 
 Open a docs page, open the AskDocs side panel, grant access if needed, index the site, then ask a question.
 
+Run backend unit tests with:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest app/tests
+```
+
 ## Notes
 
 - The extension crawls same-origin pages and prefers the docs sidebar link graph when available.
