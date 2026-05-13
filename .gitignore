@@ -1,0 +1,43 @@
+# Local tool metadata
+.agents/
+.codex/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and scratch data
+*.log
+.cache/
+.tmp/
+tmp/
+coverage/
+
+# Python backend artifacts
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node / Chrome extension artifacts
+node_modules/
+dist/
+build/
+.npm/
+.pnpm-store/
+.parcel-cache/
+
+# Packaged Chrome extension outputs
+*.crx
+*.pem
