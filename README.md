@@ -66,3 +66,13 @@ uv run --python .venv/bin/python -m pytest app/tests
 - The extension crawls same-origin pages and prefers the docs sidebar link graph when available.
 - Answers are grounded in retrieved snippets and returned with sources.
 - If you run the backend outside `start-local.sh`, set `OLLAMA_BASE_URL` as needed. The standalone backend compose file defaults to `http://host.docker.internal:11434`.
+
+## Potential improvements
+
+- Use a vector-based database and embedding-driven RAG instead of SQLite FTS-only retrieval.
+- Add model selection so the user can choose among available local Ollama models.
+- Add hybrid retrieval and reranking so keyword search and semantic search can work together.
+- Support true full-sync indexing that removes pages no longer seen during a crawl.
+- Improve site scoping for shared-origin docs hosts so separate RTD spaces do not get mixed together.
+- Add better source citations, such as snippet-level references and direct links back to the matching section.
+- Add incremental recrawls and change detection so large docs sites do not need a full refresh every time.
