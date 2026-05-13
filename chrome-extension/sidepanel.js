@@ -4,12 +4,15 @@ const state = {
 };
 
 const POLL_INTERVAL_MS = 1500;
+const PANEL_STATE_STORAGE_KEY = "askdocs:panel-state";
 
 const elements = {
+  backendPanel: document.querySelector("#backend-panel"),
   backendUrl: document.querySelector("#backend-url"),
   saveBackendButton: document.querySelector("#save-backend-button"),
   backendHealthBadge: document.querySelector("#backend-health-badge"),
   backendStatus: document.querySelector("#backend-status"),
+  currentSitePanel: document.querySelector("#current-site-panel"),
   siteOrigin: document.querySelector("#site-origin"),
   currentPage: document.querySelector("#current-page"),
   lastIndexed: document.querySelector("#last-indexed"),
@@ -18,6 +21,11 @@ const elements = {
   grantAccessButton: document.querySelector("#grant-access-button"),
   indexSiteButton: document.querySelector("#index-site-button"),
   reindexSiteButton: document.querySelector("#reindex-site-button"),
+  stopCrawlButton: document.querySelector("#stop-crawl-button"),
+  crawlPace: document.querySelector("#crawl-pace"),
+  retryFailedContainer: document.querySelector("#retry-failed-container"),
+  retryFailedButton: document.querySelector("#retry-failed-button"),
+  failedSummary: document.querySelector("#failed-summary"),
   crawlStatus: document.querySelector("#crawl-status"),
   crawlCounts: document.querySelector("#crawl-counts"),
   crawlProgress: document.querySelector("#crawl-progress"),
@@ -30,6 +38,7 @@ const elements = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  restorePanelState();
   bindEvents();
   refreshState({ forceHealthCheck: true }).catch(renderTopLevelError);
   window.setInterval(() => {
@@ -38,12 +47,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function bindEvents() {
+  bindPanelToggles();
   elements.saveBackendButton.addEventListener("click", onSaveBackendUrl);
   elements.grantAccessButton.addEventListener("click", onGrantAccess);
   elements.indexSiteButton.addEventListener("click", () => onStartCrawl({ reindex: false }));
   elements.reindexSiteButton.addEventListener("click", () => onStartCrawl({ reindex: true }));
+  elements.stopCrawlButton.addEventListener("click", onStopCrawl);
+  elements.crawlPace.addEventListener("change", onChangeCrawlPace);
+  elements.retryFailedButton.addEventListener("click", onRetryFailed);
   elements.askButton.addEventListener("click", onAskQuestion);
   elements.sourcesList.addEventListener("click", onSourceClick);
+}
+
+function bindPanelToggles() {
+  elements.backendPanel.addEventListener("toggle", persistPanelState);
+  elements.currentSitePanel.addEventListener("toggle", persistPanelState);
 }
 
 async function refreshState(options = {}) {
@@ -81,14 +99,25 @@ async function onGrantAccess() {
 
   elements.grantAccessButton.disabled = true;
   try {
-    const response = await sendMessage({
-      type: "requestSiteAccess",
-      origin: currentSite.origin,
+    const originPattern = originToPattern(currentSite.origin);
+    const alreadyGranted = await chrome.permissions.contains({
+      origins: [originPattern],
     });
-    if (!response.granted) {
-      throw new Error("Site access was not granted.");
+
+    if (!alreadyGranted) {
+      const granted = await chrome.permissions.request({
+        origins: [originPattern],
+      });
+      if (!granted) {
+        throw new Error("Site access was not granted.");
+      }
     }
+
     await refreshState({ forceHealthCheck: false });
+    setAnswerMessage(
+      `Access granted for ${currentSite.origin}. You can now index pages from this site.`,
+      "Ready"
+    );
   } catch (error) {
     renderTopLevelError(error);
   } finally {
@@ -124,8 +153,56 @@ async function onStartCrawl({ reindex }) {
   } catch (error) {
     renderTopLevelError(error);
   } finally {
-    elements.indexSiteButton.disabled = false;
-    elements.reindexSiteButton.disabled = false;
+    if (state.latest) {
+      renderState();
+    }
+  }
+}
+
+async function onChangeCrawlPace() {
+  const crawlPace = elements.crawlPace.value;
+  elements.crawlPace.disabled = true;
+  try {
+    const response = await sendMessage({
+      type: "setCrawlPace",
+      crawlPace,
+    });
+    state.latest = response.state;
+    renderState();
+  } catch (error) {
+    renderTopLevelError(error);
+  } finally {
+    elements.crawlPace.disabled = false;
+  }
+}
+
+async function onStopCrawl() {
+  const currentSite = state.latest?.currentSite;
+  if (!currentSite?.origin || !currentSite?.currentPageUrl) {
+    renderTopLevelError(new Error("Open a docs page before stopping a crawl."));
+    return;
+  }
+
+  elements.stopCrawlButton.disabled = true;
+  setAnswerMessage(
+    `Stopping the crawl for ${currentSite.origin}. AskDocs will finish the current step and close the background tab.`,
+    "Working..."
+  );
+
+  try {
+    const response = await sendMessage({
+      type: "stopCrawl",
+      currentPageUrl: currentSite.currentPageUrl,
+      siteOrigin: currentSite.origin,
+    });
+    state.latest = response.state;
+    renderState();
+  } catch (error) {
+    renderTopLevelError(error);
+  } finally {
+    if (state.latest) {
+      renderState();
+    }
   }
 }
 
@@ -164,6 +241,43 @@ async function onAskQuestion() {
   }
 }
 
+async function onRetryFailed() {
+  const currentSite = state.latest?.currentSite;
+  const siteStats = state.latest?.siteStats;
+  const failedEntries = Array.isArray(siteStats?.failedEntries) ? siteStats.failedEntries : [];
+
+  if (!currentSite?.origin || !currentSite?.currentPageUrl) {
+    renderTopLevelError(new Error("Open a docs page before retrying failed pages."));
+    return;
+  }
+  if (failedEntries.length === 0) {
+    renderTopLevelError(new Error("There are no failed pages to retry for this site."));
+    return;
+  }
+
+  elements.retryFailedButton.disabled = true;
+  setAnswerMessage(
+    `Retrying ${failedEntries.length} failed page${failedEntries.length === 1 ? "" : "s"} for ${currentSite.origin}.`,
+    "Working..."
+  );
+
+  try {
+    const response = await sendMessage({
+      type: "retryFailed",
+      currentPageUrl: currentSite.currentPageUrl,
+      siteOrigin: currentSite.origin,
+    });
+    state.latest = response.state;
+    renderState();
+  } catch (error) {
+    renderTopLevelError(error);
+  } finally {
+    if (state.latest) {
+      renderState();
+    }
+  }
+}
+
 function onSourceClick(event) {
   const sourceButton = event.target.closest("[data-source-url]");
   if (!sourceButton) {
@@ -182,9 +296,13 @@ function renderState() {
   const crawlState = latest?.crawlState;
   const siteStats = latest?.siteStats;
   const backendHealth = latest?.backendHealth;
+  const crawlPace = latest?.crawlPace || "normal";
 
   if (latest && document.activeElement !== elements.backendUrl) {
     elements.backendUrl.value = latest.backendUrl;
+  }
+  if (elements.crawlPace.value !== crawlPace) {
+    elements.crawlPace.value = crawlPace;
   }
 
   renderBackendStatus(backendHealth);
@@ -196,6 +314,9 @@ function renderState() {
 
   const canInteractWithSite = Boolean(currentSite?.origin && currentSite?.currentPageUrl);
   const accessGranted = Boolean(currentSite?.hasAccess);
+  const crawlStatus = crawlState?.status || null;
+  const crawlActive = crawlStatus === "running" || crawlStatus === "stopping";
+  const crawlStopping = crawlStatus === "stopping";
 
   setBadge(
     elements.siteAccessBadge,
@@ -204,11 +325,47 @@ function renderState() {
   );
 
   elements.grantAccessButton.disabled = !canInteractWithSite || accessGranted;
-  elements.indexSiteButton.disabled = !canInteractWithSite || !accessGranted || crawlState?.status === "running";
-  elements.reindexSiteButton.disabled = !canInteractWithSite || !accessGranted || crawlState?.status === "running";
+  elements.indexSiteButton.disabled = !canInteractWithSite || !accessGranted || crawlActive;
+  elements.reindexSiteButton.disabled = !canInteractWithSite || !accessGranted || crawlActive;
+  elements.stopCrawlButton.classList.toggle("is-hidden", !crawlActive);
+  elements.stopCrawlButton.disabled = !canInteractWithSite || !crawlActive || crawlStopping;
+  elements.crawlPace.disabled = crawlActive;
+  const retryFailedCount = Array.isArray(siteStats?.failedEntries) ? siteStats.failedEntries.length : 0;
+  const showRetryFailed = retryFailedCount > 0 && !crawlActive;
+  elements.retryFailedContainer.classList.toggle("is-hidden", !showRetryFailed);
+  elements.retryFailedButton.disabled =
+    !canInteractWithSite || !accessGranted || crawlActive || retryFailedCount === 0;
+  elements.retryFailedButton.textContent = `Retry failed (${retryFailedCount})`;
+  elements.failedSummary.textContent = formatFailedSummary(siteStats?.failedEntries);
   elements.askButton.disabled = !canInteractWithSite || state.questionPending;
 
   renderCrawlState(crawlState);
+}
+
+function restorePanelState() {
+  try {
+    const rawValue = window.localStorage.getItem(PANEL_STATE_STORAGE_KEY);
+    if (!rawValue) {
+      return;
+    }
+    const panelState = JSON.parse(rawValue);
+    if (typeof panelState.backendOpen === "boolean") {
+      elements.backendPanel.open = panelState.backendOpen;
+    }
+    if (typeof panelState.currentSiteOpen === "boolean") {
+      elements.currentSitePanel.open = panelState.currentSiteOpen;
+    }
+  } catch (_error) {
+    // Ignore invalid saved UI state and keep defaults.
+  }
+}
+
+function persistPanelState() {
+  const panelState = {
+    backendOpen: elements.backendPanel.open,
+    currentSiteOpen: elements.currentSitePanel.open,
+  };
+  window.localStorage.setItem(PANEL_STATE_STORAGE_KEY, JSON.stringify(panelState));
 }
 
 function renderBackendStatus(backendHealth) {
@@ -230,15 +387,23 @@ function renderBackendStatus(backendHealth) {
 }
 
 function renderCrawlState(crawlState) {
-  const maxPages = crawlState?.maxPages ?? 100;
+  const maxPages = crawlState?.maxPages ?? null;
   const visited = crawlState?.pagesVisited ?? 0;
   const indexed = crawlState?.pagesIndexed ?? 0;
   const failed = crawlState?.failedPages ?? 0;
   const currentUrl = crawlState?.currentUrl || null;
+  const unlimitedPages = maxPages == null;
+  const paceLabel = formatCrawlPaceLabel(crawlState?.crawlPace);
 
-  elements.crawlProgress.max = maxPages;
-  elements.crawlProgress.value = Math.min(visited, maxPages);
-  elements.crawlCounts.textContent = `${visited} / ${maxPages} pages`;
+  if (unlimitedPages) {
+    elements.crawlProgress.max = Math.max(visited, 1);
+    elements.crawlProgress.value = Math.max(visited, 0);
+    elements.crawlCounts.textContent = `${visited} / all pages`;
+  } else {
+    elements.crawlProgress.max = maxPages;
+    elements.crawlProgress.value = Math.min(visited, maxPages);
+    elements.crawlCounts.textContent = `${visited} / ${maxPages} pages`;
+  }
 
   if (!crawlState) {
     elements.crawlStatus.textContent = "Idle";
@@ -248,15 +413,35 @@ function renderCrawlState(crawlState) {
 
   if (crawlState.status === "running") {
     elements.crawlStatus.textContent = "Running";
+    if (crawlState.lastError) {
+      elements.crawlDetail.textContent =
+        `${paceLabel} pace | ${crawlState.lastError} ` +
+        `${indexed} indexed, ${failed} failed, ${crawlState.queueLength} queued`;
+      return;
+    }
     elements.crawlDetail.textContent = currentUrl
-      ? `Indexing ${currentUrl} | ${indexed} indexed, ${failed} failed, ${crawlState.queueLength} queued`
-      : "Preparing crawl...";
+      ? `${paceLabel} pace | Indexing ${currentUrl} | ${indexed} indexed, ${failed} failed, ${crawlState.queueLength} queued`
+      : `${paceLabel} pace | Preparing crawl...`;
+    return;
+  }
+
+  if (crawlState.status === "stopping") {
+    elements.crawlStatus.textContent = "Stopping";
+    elements.crawlDetail.textContent = crawlState.lastError
+      ? `${paceLabel} pace | ${crawlState.lastError} ${indexed} indexed, ${failed} failed, ${crawlState.queueLength} queued`
+      : `${paceLabel} pace | Stopping after the current page.`;
     return;
   }
 
   if (crawlState.status === "completed") {
     elements.crawlStatus.textContent = "Completed";
-    elements.crawlDetail.textContent = `Indexed ${indexed} pages with ${failed} failures.`;
+    elements.crawlDetail.textContent = `${paceLabel} pace | Indexed ${indexed} pages with ${failed} failures.`;
+    return;
+  }
+
+  if (crawlState.status === "stopped") {
+    elements.crawlStatus.textContent = "Stopped";
+    elements.crawlDetail.textContent = `${paceLabel} pace | Indexed ${indexed} pages before stopping with ${failed} failures.`;
     return;
   }
 
@@ -268,6 +453,29 @@ function renderCrawlState(crawlState) {
 
   elements.crawlStatus.textContent = "Idle";
   elements.crawlDetail.textContent = "No crawl in progress.";
+}
+
+function formatFailedSummary(failedEntries) {
+  if (!Array.isArray(failedEntries) || failedEntries.length === 0) {
+    return "";
+  }
+
+  const [latestFailure] = failedEntries;
+  const suffix = failedEntries.length > 1 ? ` ${failedEntries.length} pages still need attention.` : " 1 page still needs attention.";
+  if (latestFailure?.error) {
+    return `Latest failure: ${latestFailure.error}.${suffix}`;
+  }
+  return `Some pages still failed to index.${suffix}`;
+}
+
+function formatCrawlPaceLabel(crawlPace) {
+  if (crawlPace === "fast") {
+    return "Fast";
+  }
+  if (crawlPace === "gentle") {
+    return "Gentle";
+  }
+  return "Normal";
 }
 
 function renderAnswer(answer, sources, chunksUsed) {
@@ -376,4 +584,8 @@ function sendMessage(payload) {
       resolve(response);
     });
   });
+}
+
+function originToPattern(origin) {
+  return `${origin}/*`;
 }

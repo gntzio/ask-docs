@@ -12,76 +12,110 @@
         <p class="eyebrow">AskDocs</p>
         <h1>Local docs assistant</h1>
         <p class="hero-copy">
-          Crawl the docs site you already have open, index it into the local backend,
-          and ask grounded questions with sources.
+          Chat with the docs site you already have open and get concise answers with sources,
+          including from private pages you can already access.
         </p>
       </header>
 
-      <section class="card">
-        <div class="section-heading">
-          <div>
-            <h2>Backend</h2>
-            <p>Use the local AskDocs API endpoint.</p>
+      <details id="backend-panel" class="card collapsible-card">
+        <summary class="collapsible-summary">
+          <div class="section-heading">
+            <div>
+              <h2>Backend</h2>
+              <p class="section-subcopy">Use the local AskDocs API endpoint.</p>
+            </div>
+            <div class="summary-trailing">
+              <span id="backend-health-badge" class="badge badge-muted">Checking</span>
+              <span class="chevron" aria-hidden="true"></span>
+            </div>
           </div>
-          <span id="backend-health-badge" class="badge badge-muted">Checking</span>
+        </summary>
+        <div class="collapsible-body">
+          <label class="field-label" for="backend-url">Backend URL</label>
+          <div class="inline-row">
+            <input id="backend-url" type="url" spellcheck="false" placeholder="http://127.0.0.1:8000">
+            <button id="save-backend-button" type="button" class="button button-secondary">Save</button>
+          </div>
+          <p id="backend-status" class="helper-text">Waiting for backend status.</p>
         </div>
-        <label class="field-label" for="backend-url">Backend URL</label>
-        <div class="inline-row">
-          <input id="backend-url" type="url" spellcheck="false" placeholder="http://127.0.0.1:8000">
-          <button id="save-backend-button" type="button" class="button button-secondary">Save</button>
-        </div>
-        <p id="backend-status" class="helper-text">Waiting for backend status.</p>
-      </section>
+      </details>
 
-      <section class="card">
-        <div class="section-heading">
-          <div>
-            <h2>Current site</h2>
-            <p>AskDocs only crawls the active origin.</p>
+      <details id="current-site-panel" class="card collapsible-card" open>
+        <summary class="collapsible-summary">
+          <div class="section-heading">
+            <div>
+              <h2>Current site</h2>
+              <p class="section-subcopy">AskDocs only crawls the active origin.</p>
+            </div>
+            <div class="summary-trailing">
+              <span id="site-access-badge" class="badge badge-muted">Unknown</span>
+              <span class="chevron" aria-hidden="true"></span>
+            </div>
           </div>
-          <span id="site-access-badge" class="badge badge-muted">Unknown</span>
-        </div>
+        </summary>
+        <div class="collapsible-body">
+          <dl class="meta-grid">
+            <div>
+              <dt>Origin</dt>
+              <dd id="site-origin">Open a docs page</dd>
+            </div>
+            <div>
+              <dt>Current page</dt>
+              <dd id="current-page">No active docs page</dd>
+            </div>
+            <div>
+              <dt>Last index</dt>
+              <dd id="last-indexed">Not indexed yet</dd>
+            </div>
+            <div>
+              <dt>Indexed pages</dt>
+              <dd id="indexed-pages">0</dd>
+            </div>
+          </dl>
 
-        <dl class="meta-grid">
-          <div>
-            <dt>Origin</dt>
-            <dd id="site-origin">Open a docs page</dd>
+          <div class="button-row">
+            <button id="grant-access-button" type="button" class="button button-secondary">
+              Grant access
+            </button>
+            <button id="index-site-button" type="button" class="button button-primary">
+              Index site
+            </button>
+            <button id="reindex-site-button" type="button" class="button button-secondary">
+              Re-index
+            </button>
+            <button id="stop-crawl-button" type="button" class="button button-secondary is-hidden">
+              Stop crawl
+            </button>
           </div>
-          <div>
-            <dt>Current page</dt>
-            <dd id="current-page">No active docs page</dd>
-          </div>
-          <div>
-            <dt>Last index</dt>
-            <dd id="last-indexed">Not indexed yet</dd>
-          </div>
-          <div>
-            <dt>Indexed pages</dt>
-            <dd id="indexed-pages">0</dd>
-          </div>
-        </dl>
 
-        <div class="button-row">
-          <button id="grant-access-button" type="button" class="button button-secondary">
-            Grant access
-          </button>
-          <button id="index-site-button" type="button" class="button button-primary">
-            Index site
-          </button>
-          <button id="reindex-site-button" type="button" class="button button-secondary">
-            Re-index
-          </button>
-        </div>
-
-        <div class="progress-card">
-          <div class="progress-header">
-            <span id="crawl-status">Idle</span>
-            <span id="crawl-counts">0 / 100 pages</span>
+          <div class="settings-row">
+            <label class="field-label compact-label" for="crawl-pace">Crawl pace</label>
+            <select id="crawl-pace">
+              <option value="fast">Fast</option>
+              <option value="normal">Normal</option>
+              <option value="gentle">Gentle</option>
+            </select>
           </div>
-          <progress id="crawl-progress" max="100" value="0"></progress>
-          <p id="crawl-detail" class="helper-text">No crawl in progress.</p>
+          <p class="helper-text settings-helper">
+            Slower pacing adds randomized gaps between pages and backs off harder when a site starts pushing back.
+          </p>
+
+          <div class="progress-card">
+            <div class="progress-header">
+              <span id="crawl-status">Idle</span>
+              <span id="crawl-counts">0 / all pages</span>
+            </div>
+            <progress id="crawl-progress" max="1" value="0"></progress>
+            <p id="crawl-detail" class="helper-text">No crawl in progress.</p>
+            <div id="retry-failed-container" class="retry-row is-hidden">
+              <button id="retry-failed-button" type="button" class="button button-secondary">
+                Retry failed
+              </button>
+              <p id="failed-summary" class="helper-text"></p>
+            </div>
+          </div>
         </div>
-      </section>
+      </details>
 
       <section class="card">
         <div class="section-heading">

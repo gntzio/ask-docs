@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AskDocs 📙",
+  "name": "AskDocs",
   "version": "0.1.0",
   "description": "Chat with public and private docs through a local AskDocs backend.",
   "minimum_chrome_version": "116",
@@ -30,7 +30,7 @@
       "24": "icons/askdocs-24.png",
       "32": "icons/askdocs-32.png"
     },
-    "default_title": "Open AskDocs 📙"
+    "default_title": "Open AskDocs"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
